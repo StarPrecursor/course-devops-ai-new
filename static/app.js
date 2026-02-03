@@ -2,14 +2,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+console.log('[DEBUG] app.js 开始加载');
+
 const GUEST = new URLSearchParams(window.location.search).get('guest') === '1';
+console.log('[DEBUG] GUEST 模式:', GUEST);
+
 let auth = null;
 let db = null;
 if (!GUEST) {
-  const cfg = await fetch('/firebase-config').then(r => r.json());
-  const app = initializeApp(cfg);
-  auth = getAuth(app);
-  db = getFirestore(app);
+  try {
+    console.log('[DEBUG] 正在获取 Firebase 配置...');
+    const cfg = await fetch('/firebase-config').then(r => r.json());
+    console.log('[DEBUG] Firebase 配置:', cfg);
+    const app = initializeApp(cfg);
+    console.log('[DEBUG] Firebase App 初始化成功');
+    auth = getAuth(app);
+    console.log('[DEBUG] Firebase Auth 初始化成功');
+    db = getFirestore(app);
+    console.log('[DEBUG] Firestore 初始化成功');
+  } catch (err) {
+    console.error('[DEBUG] Firebase 初始化失败:', err);
+  }
 }
 
 const authView = document.getElementById('auth');
@@ -98,19 +111,45 @@ const saveChat = async (question, answer, error) => {
   try { await addDoc(col, payload); } catch {}
 };
 
+console.log('[DEBUG] 正在绑定登录按钮事件...');
 document.getElementById('signin').addEventListener('click', async () => {
+  console.log('[DEBUG] 登录按钮被点击');
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
-  if (!email || !password) return;
-  await signInWithEmailAndPassword(auth, email, password);
+  console.log('[DEBUG] 邮箱:', email, '密码长度:', password.length);
+  if (!email || !password) {
+    console.log('[DEBUG] 邮箱或密码为空，退出');
+    return;
+  }
+  try {
+    console.log('[DEBUG] 正在调用 signInWithEmailAndPassword...');
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    console.log('[DEBUG] 登录成功:', result.user.email);
+  } catch (err) {
+    console.error('[DEBUG] 登录失败:', err.code, err.message);
+  }
 });
+console.log('[DEBUG] 登录按钮事件绑定完成');
 
+console.log('[DEBUG] 正在绑定注册按钮事件...');
 document.getElementById('signup').addEventListener('click', async () => {
+  console.log('[DEBUG] 注册按钮被点击');
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
-  if (!email || !password) return;
-  await createUserWithEmailAndPassword(auth, email, password);
+  console.log('[DEBUG] 邮箱:', email, '密码长度:', password.length);
+  if (!email || !password) {
+    console.log('[DEBUG] 邮箱或密码为空，退出');
+    return;
+  }
+  try {
+    console.log('[DEBUG] 正在调用 createUserWithEmailAndPassword...');
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    console.log('[DEBUG] 注册成功:', result.user.email);
+  } catch (err) {
+    console.error('[DEBUG] 注册失败:', err.code, err.message);
+  }
 });
+console.log('[DEBUG] 注册按钮事件绑定完成');
 
 document.getElementById('signout').addEventListener('click', async () => {
   if (GUEST) return;
